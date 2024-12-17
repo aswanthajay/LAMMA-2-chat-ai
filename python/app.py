@@ -1,21 +1,18 @@
-# Heavily based on https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps
-
 import json
-
 import streamlit as st
 from cloudflare import Cloudflare
 
+# Set up the app title
+st.title("Code Assist Bot by Aswanth - Based on LLAMA 3.1")
 
-st.title("Code Assist V2 Bot by Aswath based on Deepcode 3.8-b")
-
-# Set Cloudflare API key from Streamlit secrets
+# Initialize Cloudflare client with API token
 client = Cloudflare(api_token=st.secrets["CLOUDFLARE_API_TOKEN"])
 
-# Initialize chat history
+# Initialize chat history if not already done
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat messages from history on app rerun
+# Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
@@ -24,31 +21,35 @@ for message in st.session_state.messages:
 if prompt := st.chat_input("What is up?"):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
-    # Display user message in chat message container
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Display assistant response in chat message container
+    # Prepare assistant response
     with st.chat_message("assistant"):
-        with client.workers.ai.with_streaming_response.run(
-            account_id=st.secrets["CLOUDFLARE_ACCOUNT_ID"],
-            model_name="@hf/thebloke/deepseek-coder-6.7b-base-awq"
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        ) as response:
-            # The response is an EventSource object that looks like so
-            # data: {"response": "Hello "}
-            # data: {"response": ", "}
-            # data: {"response": "World!"}
-            # data: [DONE]
-            # Create a token iterator
-            def iter_tokens(r):
-                for line in r.iter_lines():
-                    if line.startswith("data: ") and not line.endswith("[DONE]"):
-                        entry = json.loads(line.replace("data: ", ""))
-                        yield entry["response"]
+        try:
+            # Run the model on Cloudflare Workers with streaming enabled
+            with client.workers.ai.with_streaming_response.run(
+                account_id=st.secrets["CLOUDFLARE_ACCOUNT_ID"],
+                model_name="@hf/thebloke/deepseek-coder-6.7b-base-awq",
+                messages=[
+                    {"role": "system", "content": "AI name: Aira Chatbot, Made by Aswanth Ajay and team Votion Cloud, Version 0.9 ASW Deepcode Alpha"},
+                    *st.session_state.messages,
+                ],
+                stream=True,
+            ) as response:
+                # Token iterator for streaming response
+                def iter_tokens(r):
+                    for line in r.iter_lines():
+                        if line.startswith("data: ") and not line.endswith("[DONE]"):
+                            entry = json.loads(line.replace("data: ", ""))
+                            yield entry["response"]
 
-            completion = st.write_stream(iter_tokens(response))
-    st.session_state.messages.append({"role": "assistant", "content": completion})
+                completion = "".join(iter_tokens(response))
+                st.markdown(completion)
+
+            # Append assistant response to chat history
+            st.session_state.messages.append({"role": "assistant", "content": completion})
+
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+
