@@ -6,7 +6,7 @@ import streamlit as st
 from cloudflare import Cloudflare
 
 
-st.title("Workers AI Text Generation Hackathon Helper")
+st.title("Code Assist V2 Bot by Aswanth based on Deepcode V4")
 
 # Set Cloudflare API key from Streamlit secrets
 client = Cloudflare(api_token=st.secrets["CLOUDFLARE_API_TOKEN"])
