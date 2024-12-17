@@ -32,7 +32,7 @@ if prompt := st.chat_input("What is up?"):
     with st.chat_message("assistant"):
         with client.workers.ai.with_streaming_response.run(
             account_id=st.secrets["CLOUDFLARE_ACCOUNT_ID"],
-            model_name="@hf/thebloke/deepseek-coder-6.7b-base-awq
+            model_name="@hf/thebloke/deepseek-coder-6.7b-base-awq"
                 {"role": m["role"], "content": m["content"]}
                 for m in st.session_state.messages
             ],
