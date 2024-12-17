@@ -30,7 +30,7 @@ if prompt := st.chat_input("What is up?"):
             # Run the model on Cloudflare Workers with streaming enabled
             with client.workers.ai.with_streaming_response.run(
                 account_id=st.secrets["CLOUDFLARE_ACCOUNT_ID"],
-                model_name="@hf/thebloke/deepseek-coder-6.7b-base-awq",
+                model_name="@cf/meta/llama-3.1-8b-instruct-fast",
                 messages=[
                     {"role": "system", "content": "AI name: Aira Chatbot, Made by Aswanth Ajay and team Votion Cloud, Version 0.9 ASW Deepcode Alpha"},
                     *st.session_state.messages,
